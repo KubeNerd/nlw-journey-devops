@@ -82,7 +82,7 @@ jobs:
         git config user.email "${{ github.event.pusher.email  }}"
         git config user.name "${{ github.event.pusher.name }}"
 
-        git add deploy/values.yaml
+        git add kubernetes/manifest-helm/values.yaml
         git commit -m "Update image tag to $new_tag" || echo "No changes to commit"
         git push origin main
 
