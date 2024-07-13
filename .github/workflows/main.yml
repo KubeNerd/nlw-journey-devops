@@ -45,7 +45,7 @@ jobs:
     - name: Build Docker image
       run: |
         echo "Building version ${{ github.run_id }}"
-        docker build -t ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }} .
+        docker build -t ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }} .\journey_app
     
     - name: Docker login
       run: |
