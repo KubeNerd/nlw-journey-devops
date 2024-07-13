@@ -1,0 +1,96 @@
+name: NLW DevOps CI-CD
+
+on: 
+  push:
+  workflow_dispatch:
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+  scan:
+    name: 'GitLeaks Scanner'
+    runs-on: ubuntu-latest
+    needs: checkout
+    steps:
+    - name: Security
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_and_push:
+    name: Build And Push to Image Registry
+    runs-on: ubuntu-latest
+    needs: scan
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.x'
+    
+    - name: Run tests
+      run: go test ./...
+
+    - name: Build Docker image
+      run: |
+        echo "Building version ${{ github.run_id }}"
+        docker build -t ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }} .
+    
+    - name: Docker login
+      run: |
+        echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_ACCOUNT }} -p ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Push Docker image
+      run: |
+        docker push ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }}
+        docker tag ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }} ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:latest
+        docker push ${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:latest
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ secrets.DOCKER_REGISTRY }}/nlw-journey-devops-api:${{ github.run_id }}'
+        format: 'table'
+        exit-code: '0'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Commit image tag to ArgoCD repo
+      run: |
+        file_path="deploy/values.yaml"
+        new_tag='${{ github.run_id }}'
+        
+        if [ -f "$file_path" ]; then
+          sed -i "/^  tag:/c\  tag: \"$new_tag\"" $file_path
+          echo "A tag foi atualizada para '$new_tag'."
+        else
+          echo "Error: file not found"
+        fi
+
+        git config user.email "${{ github.event.pusher.email  }}"
+        git config user.name "${{ github.event.pusher.name }}"
+
+        git add deploy/values.yaml
+        git commit -m "Update image tag to $new_tag" || echo "No changes to commit"
+        git push origin main
+
+  logout:
+    name: Registry Logout
+    runs-on: ubuntu-latest
+    needs: build_and_push
+
+    steps:
+    - name: Docker logout
+      run: docker logout

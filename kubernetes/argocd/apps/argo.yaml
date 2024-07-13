@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nlw-journey
+  namespace: argocd
+spec:
+  project: journey
+  source:
+    repoURL: https://github.com/KubeNerd/nlw-journey-devops.git
+    targetRevision: HEAD
+    path: ./kubernetes/manifest-helm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: journey
+
+

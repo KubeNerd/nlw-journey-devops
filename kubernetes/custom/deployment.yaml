@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nlw-journey-goapp
+  namespace: journey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: journey-api
+  template:
+    metadata:
+      labels:
+        app: journey-api
+    spec:
+      containers:
+      - name: journey-api
+        image: viniciuspoa2/nlw-journey-devops-api:9878058195
+        env:
+        - name: JOURNEY_DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: journey-secrets
+              key: db_user
+        - name: JOURNEY_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: journey-secrets
+              key: db_password
+        - name: JOURNEY_DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: journey-secrets
+              key: db_name
+        - name: JOURNEY_DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: journey-secrets
+              key: db_host
+        - name: JOURNEY_DATABASE_PORT
+          valueFrom:
+            secretKeyRef:
+              name: journey-secrets
+              key: db_port
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          request:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080

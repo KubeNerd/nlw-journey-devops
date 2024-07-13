@@ -1,0 +1,39 @@
+version: '3.8'
+
+networks:
+  journey:
+    driver: bridge
+volumes:
+  database:
+    driver: local
+
+services:
+  api:
+    container_name: api
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      JOURNEY_DATABASE_USER: ${JOURNEY_DATABASE_USER}
+      JOURNEY_DATABASE_PASSWORD: ${JOURNEY_DATABASE_PASSWORD}
+      JOURNEY_DATABASE_NAME: ${JOURNEY_DATABASE_NAME}
+      JOURNEY_DATABASE_HOST: ${JOURNEY_DATABASE_HOST}
+      JOURNEY_DATABASE_PORT: ${JOURNEY_DATABASE_PORT}
+    # networks:
+    #   - journey
+    depends_on:
+      - database
+  database:
+    container_name: api-db
+    image: postgres:latest
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./scripts/init.db.sql:/docker-entrypoint-initdb.d/init.db.sql
+    ports:
+      - ${JOURNEY_DATABASE_PORT}:5432
+    environment:
+      POSTGRES_USER: ${JOURNEY_DATABASE_USER}
+      POSTGRES_PASSWORD: ${JOURNEY_DATABASE_PASSWORD}
+      POSGRES_DB: ${JOURNEY_DATABASE_NAME}
+    # networks:
+    #   - journey
