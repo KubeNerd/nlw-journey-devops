@@ -69,7 +69,7 @@ jobs:
 
     - name: Commit image tag to ArgoCD repo
       run: |
-        file_path="deploy/values.yaml"
+        file_path="kubernetes/manifest-helm/values.yaml"
         new_tag='${{ github.run_id }}'
         
         if [ -f "$file_path" ]; then
