@@ -8,7 +8,7 @@ image:
   repository: viniciuspoa2/nlw-journey-devops-api
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "9878058195"
+  tag: "9922495537"
   containerPort: 8080
 
 imagePullSecrets: []
